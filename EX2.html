@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Impact of Source Temp</title>
+  <style>
+    
+    #experimentName {
+      text-align: center;
+      font-size: 24px;
+      margin-bottom: 20px;
+      color: blue; 
+    }
+
+   
+    .container {
+      margin: 20px;
+      display: flex;
+      flex-direction: row;
+    }
+
+    .input-container {
+      flex: 1;
+    }
+
+    input[type="number"] {
+      width: 150px;
+      margin-right: 10px;
+    }
+
+    button {
+      margin-top: 10px;
+      padding: 5px 10px;
+    }
+
+    #chartContainer {
+      margin-top: 20px;
+      flex: 2;
+    }
+
+    #resultContainer {
+      flex: 1;
+      
+      
+    }
+
+    #resultContainer p {
+      margin: 0;
+      
+    }
+
+    #resultContainer table {
+      width: 100%;
+      
+    }
+
+    #resultContainer th, #resultContainer td {
+      text-align: center;
+      padding: 5px;
+      
+    }
+  </style>
+</head>
+<body>
+  
+  <h1 id="experimentName">Analyze Impact of Source Temperature</h1><br><br>
+
+  <div class="container">
+    <div class="input-container">
+      <label for="sinkTemp">Sink Temperature (°C):</label><br>
+      <input type="number" id="sinkTemp" placeholder="Enter sink temp">
+      <br><br>
+      <label for="maxTemp">Max Source Temperature (°C):</label><br>
+      <input type="number" id="maxTemp" placeholder="Enter max source temperature">
+      <br><br>
+      <label for="dataPoints">Number of Data Points:</label><br>
+      <input type="number" id="dataPoints" placeholder="Enter number of data points">
+      <br><br>
+      <button onclick="calculate()">Show Result</button>
+      <button onclick="showGraph()">Show Graph</button>
+      <button onclick="resetForm()">Reset</button>
+    </div>
+    <div id="resultContainer"></div>
+    <div id="chartContainer"></div>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.js"></script>
+  <script>
+   
+    function K(t) {
+      return t + 273.15;
+    }
+
+    function calculate() {
+      var T_sink = parseFloat(document.getElementById("sinkTemp").value);
+      var T_max = parseFloat(document.getElementById("maxTemp").value);
+      var n = parseInt(document.getElementById("dataPoints").value);
+
+      var T_source = [];
+      var eta = [];
+
+      for (var i = T_sink; i <= T_max; i += (T_max - T_sink) / (n - 1)) {
+        T_source.push(i);
+        eta.push(1 - K(T_sink) / K(i));
+      }
+
+      var resultContainer = document.getElementById("resultContainer");
+      resultContainer.innerHTML = "";
+
+     
+      var resultTable = "<h3>Results:</h3>";
+      resultTable += "<table>";
+      resultTable += "<tr><th>T_source</th><th>Eta (%)</th></tr>";
+      for (var i = 0; i < T_source.length; i++) {
+        resultTable += "<tr><td>" + T_source[i].toFixed(2) + "</td><td>" + (eta[i] * 100).toFixed(2) + "</td></tr>";
+      }
+      resultTable += "</table>";
+      resultContainer.innerHTML = resultTable;
+    }
+
+    function showGraph() {
+      var T_sink = parseFloat(document.getElementById("sinkTemp").value);
+      var T_max = parseFloat(document.getElementById("maxTemp").value);
+      var n = parseInt(document.getElementById("dataPoints").value);
+
+      var T_source = [];
+      var eta = [];
+
+      for (var i = T_sink; i <= T_max; i += (T_max - T_sink) / (n - 1)) {
+        T_source.push(i);
+        eta.push(1 - K(T_sink) / K(i));
+      }
+
+      var chartContainer = document.getElementById("chartContainer");
+      chartContainer.innerHTML = "";
+
+      var canvas = document.createElement("canvas");
+      chartContainer.appendChild(canvas);
+
+      var ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      var chart = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels: T_source.map(function(value) { return value.toFixed(2); }),
+          datasets: [{
+            label: "Eta (%)",
+            data: eta.map(function(value, index) { return { x: T_source[index].toFixed(2), y: (value * 100).toFixed(2) }; }),
+            borderColor: "red",
+            backgroundColor: "transparent",
+            pointBackgroundColor: "red",
+            pointRadius: 5,
+            pointHoverRadius: 7,
+            pointHoverBackgroundColor: "red",
+            pointHoverBorderColor: "black"
+          }]
+        },
+        options: {
+          scales: {
+            xAxes: [{
+              scaleLabel: {
+                display: true,
+                labelString: "T_source"
+              }
+            }],
+            yAxes: [{
+              scaleLabel: {
+                display: true,
+                labelString: "Eta (%)"
+              }
+            }]
+          },
+          tooltips: {
+            callbacks: {
+              label: function(tooltipItem, data) {
+                var label = data.datasets[tooltipItem.datasetIndex].label || '';
+
+                if (label) {
+                  label += ': ';
+                }
+                label += tooltipItem.value;
+                return label;
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function resetForm() {
+      document.getElementById("sinkTemp").value = "";
+      document.getElementById("maxTemp").value = "";
+      document.getElementById("dataPoints").value = "";
+      var resultContainer = document.getElementById("resultContainer");
+      resultContainer.innerHTML = "";
+      var chartContainer = document.getElementById("chartContainer");
+      chartContainer.innerHTML = "";
+    }
+  </script>
+</body>
+</html>
